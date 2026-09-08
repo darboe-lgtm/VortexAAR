@@ -104,8 +104,14 @@
           <input type="text" id="opEditName" list="operatorDirectoryList" oninput="prefillOperatorEdit(this)">
         </div>
         <div class="field"><label for="opEditLicense">License number</label><input type="text" id="opEditLicense"></div>
+        <div class="field"><label for="opEditPhone">Phone number</label><input type="text" id="opEditPhone"></div>
         <div class="field full"><label for="opEditAddress">Address</label><input type="text" id="opEditAddress"></div>
         <div class="field"><label for="opEditAge">Age</label><input type="text" id="opEditAge"></div>
+      </div>
+      <div class="field full" style="margin-bottom:10px;">
+        <label for="opEditPhotoFile">Photo</label>
+        <input type="file" id="opEditPhotoFile" accept="image/*" onchange="handlePhotoSelect(event)">
+        <img id="opEditPhotoPreview" style="display:none;width:88px;height:88px;object-fit:cover;border-radius:6px;margin-top:8px;border:1px solid var(--line);">
       </div>
       <datalist id="operatorDirectoryList"></datalist>
       <div class="save-row">
@@ -127,10 +133,71 @@
 <script>
 const CHECKIN_API_URL = "https://script.google.com/macros/s/AKfycbyh2E21uM3TooJlwllIOL4BfoHkcAnlNautV4zcpZpj2lEUnq66oDDN6TfUiaTbXgMsrQ/exec";
 
+const CONTACTS = [
+  {name:"Harrison Armstrong", license:"", address:"90 N 4850 W, West Point, UT 84015", age:"20", phone:"(385)262-6607"},
+  {name:"Cherylee Bigler", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"42", phone:"(801)347-4692"},
+  {name:"Jordan Hernandez", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"19", phone:"(385)261-1344"},
+  {name:"Kevin Hernandez", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"18", phone:"(801)347-4527"},
+  {name:"Ryan Bigler", license:"Display FE129616, Prox FE129626, Flame Eff FE129636", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"44", phone:"(801)347-4527"},
+  {name:"Sofia Bigler", license:"", address:"5058 S. Daisy Ln., Murray, UT 84123", age:"19", phone:"(801)702-3785"},
+  {name:"Clara Boekweg (Ronan)", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"18", phone:"(801)690-0203"},
+  {name:"Darren Boekweg", license:"Display FE127616, Special Effects FE130416, Flame FE134616", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"44", phone:"(801)690-0203"},
+  {name:"Ian Boekweg", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"21", phone:"(385)377-3710"},
+  {name:"Noah Boekweg", license:"", address:"1815 Foothill Dr, Salt Lake City, UT 84108", age:"22", phone:"(925)487-7213"},
+  {name:"Sheena Boekweg", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"43", phone:"(801)690-0203"},
+  {name:"Nicki Carter", license:"", address:"", age:"31", phone:"(385)419-6882"},
+  {name:"Drew Christensen", license:"FE136216", address:"4217 South Deno Drive, West Valley City, UT 84120", age:"28", phone:"(801)657-0696"},
+  {name:"Mason Dahl", license:"", address:"460 N 5000 W, West Point, UT 84015", age:"20", phone:"(801)888-4134"},
+  {name:"Ethan Doney", license:"FE125816", address:"6288 S 2525 W, Taylorsville, UT 84129", age:"24", phone:""},
+  {name:"McKayla Farnsworth", license:"", address:"4112 W 4000 S, WVC, UT 84120", age:"18", phone:""},
+  {name:"Eric Farnsworth", license:"FE28540", address:"4112 W 4000 S, WVC, UT 84120", age:"47", phone:"(385)505-0600"},
+  {name:"Randa Farnsworth", license:"", address:"4112 W 4000 S, WVC, UT 84120", age:"25", phone:""},
+  {name:"Kurtis Fredericks", license:"FE113011", address:"3573 W. 1450 N., West Point, UT 84015", age:"44", phone:""},
+  {name:"Brady Gabbitas", license:"Display FE121816, Prox FE121826, Flame Eff FE123016", address:"116 N 1525 W, West Point, UT 84015", age:"40", phone:"(801)499-4149"},
+  {name:"Calli Gade", license:"", address:"542 N Willow Springs Ave, Lehi, UT 84043", age:"34", phone:""},
+  {name:"Katie Gabbitas", license:"", address:"116 N 1525 W, West Point, UT 84015", age:"37", phone:"(801)499-4149"},
+  {name:"Jenifer Hairr", license:"FE100009", address:"8775 S Deep Creek Drive, West Jordan, UT 84081", age:"", phone:"(801)644-8368"},
+  {name:"McKenzie Haynes", license:"", address:"1251 W. 525 S., Lehi, UT 84043", age:"22", phone:"(385)535-1979"},
+  {name:"Taylor Harrison", license:"", address:"2360 East 2100 S, Salt Lake City, UT 84109", age:"20", phone:"(801)440-0574"},
+  {name:"Ben Jensen", license:"Display & Prox FE56511", address:"7005 W 2500 N, Mendon, UT 84325", age:"45", phone:"(435)881-2458"},
+  {name:"Charles Johnson", license:"FE3879", address:"1865 Wasatch Dr. E, Salt Lake City, UT 84108", age:"67", phone:"(801)580-6389"},
+  {name:"Brandon Lang", license:"", address:"5193 W. Armada Way, Herriman, UT 84096", age:"48", phone:"(801)664-2848"},
+  {name:"John Lawton", license:"", address:"432 Rolling Sage Way, Saratoga Springs, UT 84045", age:"42", phone:"(801)473-1028"},
+  {name:"Julio Lopez", license:"", address:"8528 W Cordero Drive, SLC, UT 84044", age:"20", phone:"(326)593-9919"},
+  {name:"Jeff McDonald", license:"", address:"1878 E 5150 S, Holladay, UT 84117", age:"43", phone:"(801)633-2633"},
+  {name:"Amanda Mechem", license:"(D) FE6771, (SE) 100211", address:"831 E 950 S, Provo, UT 84606", age:"48", phone:"(801)636-3040"},
+  {name:"Grace Melton", license:"", address:"", age:"", phone:""},
+  {name:"Jason Mecham", license:"", address:"831 E 950 S, Provo, UT 84606", age:"49", phone:"(801)636-3040"},
+  {name:"Ruthanne Wilberg", license:"", address:"831 E 950 S, Provo, UT 84606", age:"18", phone:"(801)636-3040"},
+  {name:"Niel Moalla", license:"", address:"", age:"", phone:""},
+  {name:"Russ Monsive", license:"", address:"7637 S 4470 W, West Jordan, UT 84084", age:"48", phone:"(801)403-8759"},
+  {name:"Mike Olsen", license:"", address:"1170 East 1000 South, Spanish Fork, UT 84660", age:"63", phone:"(801)368-5187"},
+  {name:"Cameron Orr", license:"FE98271", address:"3312 E Kennecuck Lane, Eagle Mountain, UT 84005", age:"42", phone:"(801)512-5742"},
+  {name:"Dave Pehrson", license:"", address:"4943 Kathleen Ave, Salt Lake City, UT 84120", age:"68", phone:"(801)580-5400"},
+  {name:"Dave Perkes", license:"", address:"", age:"65", phone:"(435)713-5230"},
+  {name:"Jason Pehrson", license:"FE134626", address:"7522 S 4730 W, West Jordan, UT 84084", age:"42", phone:"(801)946-7294"},
+  {name:"Stephen Pehrson", license:"", address:"4320 S Arden Court, Taylorsville, UT 84123", age:"34", phone:"(801)831-9264"},
+  {name:"Vincent Pelina", license:"", address:"590 E 1590 S, Lehi, UT 84043", age:"28", phone:"(909)560-7350"},
+  {name:"Carter Pochynok", license:"Display FE135416", address:"1302 S. Roberta St., SLC, UT 84115", age:"28", phone:"(385)299-4373"},
+  {name:"Niel Rands", license:"", address:"4365 Deermeadow Dr, West Valley City, UT 84120", age:"59", phone:"(801)390-0427"},
+  {name:"Paula Rasmussen", license:"", address:"PO Box 8624, Midvale, UT 84047", age:"58", phone:"(385)414-1776"},
+  {name:"Thai Schmoekel", license:"", address:"", age:"", phone:""},
+  {name:"Daland Speirs", license:"FE112441", address:"4960 W Mandan Ave, Salt Lake City, UT 84120", age:"48", phone:"(801)502-7691"},
+  {name:"Max Starr", license:"", address:"10117 N Cottonwood Drive, Cedar Hills, UT 84062", age:"18", phone:"(385)447-3080"},
+  {name:"Clifford Wallgren", license:"Prox FE7488, Flame FE100006", address:"4022 S. Peachwood Dr, WVC, UT 84118", age:"44", phone:"(801) 631-0557"},
+  {name:"Jessica Wallace", license:"", address:"7867 Millerberg Dr, Sandy, UT 84047", age:"26", phone:"(801)828-5007"},
+  {name:"JJ Wallace", license:"", address:"7867 Millerberg Dr, Sandy, UT 84047", age:"48", phone:"(801)828-0256"},
+  {name:"Garth Wiscombe", license:"", address:"7256 Nina Cir, West Jordan, UT 84084", age:"68", phone:"(801)558-5936"},
+  {name:"Rex Williams", license:"", address:"2387 East 3395 South, Millcreek, UT 84109", age:"38", phone:"(801)949-7561"},
+  {name:"Ruthie Wood", license:"", address:"968 E Cherry Lane, Layton, UT 84040", age:"21", phone:"(385)368-2905"},
+  {name:"Evan Cornell", license:"", address:"1039 W. Feather Cap, Bluffdale, UT 84065", age:"43", phone:"(801)688-2953"},
+  {name:"Tina Carrasco", license:"", address:"1158 N 200 W, Apt 2, Bountiful, UT 84010", age:"43", phone:"(385) 489-9163"}
+];
+
 const CONTACTS_BY_NAME = {};
+CONTACTS.forEach(c => CONTACTS_BY_NAME[c.name.toLowerCase()] = c);
 
 async function fetchOperatorDirectory(){
-  const wrap = document.getElementById('operatorListWrap');
   try{
     const res = await fetch(`${CHECKIN_API_URL}?type=contacts`);
     if(!res.ok) throw new Error('Request failed');
@@ -141,14 +208,15 @@ async function fetchOperatorDirectory(){
         CONTACTS_BY_NAME[c.name.trim().toLowerCase()] = {
           name: c.name.trim(),
           license: c.license || '',
+          phone: c.phone || '',
           address: c.address || '',
-          age: c.age || ''
+          age: c.age || '',
+          photoUrl: c.photoUrl || ''
         };
       });
     }
   } catch(err){
-    wrap.innerHTML = '<p style="color:var(--brick);margin:4px 0;">Could not load the operator list — check your connection.</p>';
-    return;
+    // Sheet sync failed — still show the built-in operator list below
   }
   populateOperatorDatalist();
   renderOperatorList();
@@ -159,12 +227,61 @@ function populateOperatorDatalist(){
   dl.innerHTML = Object.values(CONTACTS_BY_NAME).map(c => `<option value="${c.name}">`).join('');
 }
 
+let pendingPhotoBase64 = null;
+
+function resizeImageToDataUrl(file, maxSize, quality){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if(w > h){ if(w > maxSize){ h = Math.round(h * maxSize / w); w = maxSize; } }
+        else { if(h > maxSize){ w = Math.round(w * maxSize / h); h = maxSize; } }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handlePhotoSelect(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const dataUrl = await resizeImageToDataUrl(file, 400, 0.7);
+  pendingPhotoBase64 = dataUrl;
+  const preview = document.getElementById('opEditPhotoPreview');
+  preview.src = dataUrl;
+  preview.style.display = 'block';
+}
+
 function prefillOperatorEdit(nameInput){
   const match = CONTACTS_BY_NAME[nameInput.value.trim().toLowerCase()];
   if(match){
     document.getElementById('opEditLicense').value = match.license || '';
+    document.getElementById('opEditPhone').value = match.phone || '';
     document.getElementById('opEditAddress').value = match.address || '';
     document.getElementById('opEditAge').value = match.age || '';
+    showExistingPhoto(match.photoUrl);
+  }
+}
+
+function showExistingPhoto(photoUrl){
+  pendingPhotoBase64 = null;
+  document.getElementById('opEditPhotoFile').value = '';
+  const preview = document.getElementById('opEditPhotoPreview');
+  if(photoUrl){
+    preview.src = photoUrl;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+    preview.src = '';
   }
 }
 
@@ -181,9 +298,15 @@ function renderOperatorList(){
   }
   wrap.innerHTML = names.map(c => `
     <div class="op-row">
-      <div>
-        <div class="op-name">${c.name}</div>
-        <div class="op-detail">${[c.license, c.address, c.age ? 'Age ' + c.age : ''].filter(Boolean).join(' · ') || 'No details on file'}</div>
+      <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+        ${c.photoUrl
+          ? `<img src="${c.photoUrl}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="">`
+          : `<div style="width:36px;height:36px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink-soft);flex-shrink:0;">${c.name.charAt(0)}</div>`
+        }
+        <div style="min-width:0;">
+          <div class="op-name">${c.name}</div>
+          <div class="op-detail">${[c.license, c.phone, c.address, c.age ? 'Age ' + c.age : ''].filter(Boolean).join(' · ') || 'No details on file'}</div>
+        </div>
       </div>
       <button type="button" onclick="loadOperatorIntoEditor('${c.name.replace(/'/g,"\\'")}')">Edit</button>
     </div>
@@ -195,8 +318,10 @@ function loadOperatorIntoEditor(name){
   if(!match) return;
   document.getElementById('opEditName').value = match.name;
   document.getElementById('opEditLicense').value = match.license || '';
+  document.getElementById('opEditPhone').value = match.phone || '';
   document.getElementById('opEditAddress').value = match.address || '';
   document.getElementById('opEditAge').value = match.age || '';
+  showExistingPhoto(match.photoUrl);
   document.getElementById('opEditName').scrollIntoView({behavior:'smooth', block:'center'});
 }
 
@@ -204,6 +329,7 @@ function saveOperator(){
   const statusEl = document.getElementById('operatorSaveStatus');
   const name = document.getElementById('opEditName').value.trim();
   const license = document.getElementById('opEditLicense').value.trim();
+  const phone = document.getElementById('opEditPhone').value.trim();
   const address = document.getElementById('opEditAddress').value.trim();
   const age = document.getElementById('opEditAge').value.trim();
 
@@ -213,25 +339,31 @@ function saveOperator(){
     return;
   }
 
-  statusEl.textContent = 'Saving…';
+  statusEl.textContent = pendingPhotoBase64 ? 'Saving (uploading photo)…' : 'Saving…';
   statusEl.style.color = 'var(--ink-soft)';
 
-  const payload = { recordType: 'contact', name, license, address, age };
+  const payload = { recordType: 'contact', name, license, phone, address, age };
+  if(pendingPhotoBase64){
+    payload.photoBase64 = pendingPhotoBase64;
+  }
 
   fetch(CHECKIN_API_URL, {
     method: 'POST',
     mode: 'no-cors',
     body: JSON.stringify(payload)
-  }).then(() => {
-    CONTACTS_BY_NAME[name.toLowerCase()] = { name, license, address, age };
-    populateOperatorDatalist();
-    renderOperatorList();
+  }).then(async () => {
+    // Re-fetch from the Sheet so we pick up the real Drive photo URL
+    await fetchOperatorDirectory();
     statusEl.textContent = 'Saved.';
     statusEl.style.color = 'var(--ok)';
     document.getElementById('opEditName').value = '';
     document.getElementById('opEditLicense').value = '';
+    document.getElementById('opEditPhone').value = '';
     document.getElementById('opEditAddress').value = '';
     document.getElementById('opEditAge').value = '';
+    document.getElementById('opEditPhotoFile').value = '';
+    document.getElementById('opEditPhotoPreview').style.display = 'none';
+    pendingPhotoBase64 = null;
   }).catch(() => {
     statusEl.textContent = 'Could not save — check your connection and try again.';
     statusEl.style.color = 'var(--brick)';
