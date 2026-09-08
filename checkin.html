@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Event Check-In — Vortex Productions</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c2b3a">
+<link rel="icon" href="icon-192.png">
+<style>
+  :root{
+    --navy:#1c2b3a; --brick:#8c3b2e; --brick-light:#b5493a;
+    --paper:#f6f3ec; --card:#ffffff; --line:#d8d2c4;
+    --ink:#20262c; --ink-soft:#5b6470; --ok:#2f6d4f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh;
+    background:var(--paper); color:var(--ink);
+    font-family:"Helvetica Neue",Arial,sans-serif;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:32px 16px;
+  }
+  .card{
+    max-width:440px; width:100%;
+    background:var(--card); border:1px solid var(--line);
+    border-radius:6px; overflow:hidden;
+  }
+  header{
+    background:var(--navy); color:#f2efe6;
+    padding:22px 24px; border-bottom:4px solid var(--brick);
+  }
+  header .kicker{font-size:11px;letter-spacing:.08em;color:#c9d2da;margin:0 0 4px;}
+  header h1{margin:0;font-size:19px;font-weight:600;line-height:1.3;}
+  .body{padding:24px;}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:16px;}
+  label{font-size:11.5px;color:var(--ink-soft);font-weight:600;}
+  input[type=text],input[type=number]{
+    font-size:15px;padding:10px 12px;border:1px solid var(--line);
+    border-radius:3px;background:#fdfcfa;color:var(--ink);
+  }
+  input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 2px rgba(28,43,58,0.12);}
+  input[readonly]{background:#eee9dd;color:var(--ink-soft);}
+  button.primary{
+    width:100%; background:var(--brick); color:#fdf6f2; border:none;
+    font-size:15px; font-weight:600; padding:13px 16px; border-radius:3px; cursor:pointer;
+  }
+  button.primary:disabled{opacity:.6;cursor:default;}
+  button.primary:hover:not(:disabled){background:var(--brick-light);}
+  .msg{font-size:13px;margin-top:14px;text-align:center;}
+  .msg.ok{color:var(--ok);}
+  .msg.err{color:var(--brick);}
+  .success{
+    padding:40px 24px;text-align:center;
+  }
+  .success .check{
+    width:56px;height:56px;border-radius:50%;background:var(--ok);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    font-size:28px;margin:0 auto 16px;
+  }
+  .success h2{margin:0 0 6px;font-size:18px;color:var(--ink);}
+  .success p{margin:0;color:var(--ink-soft);font-size:13.5px;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <header>
+    <p class="kicker">VORTEX PRODUCTIONS INC.</p>
+    <h1 id="eventTitle">Event Check-In</h1>
+  </header>
+  <div class="body" id="formBody">
+    <div class="field">
+      <label for="eventName">Event / venue</label>
+      <input type="text" id="eventName">
+    </div>
+    <div class="field">
+      <label for="personName">Your name</label>
+      <input type="text" id="personName" list="contactsList" oninput="autofill(this)" autocomplete="off">
+      <datalist id="contactsList"></datalist>
+    </div>
+    <div class="field">
+      <label for="personLicense">License number</label>
+      <input type="text" id="personLicense">
+    </div>
+    <div class="field">
+      <label for="personAddress">Address</label>
+      <input type="text" id="personAddress">
+    </div>
+    <div class="field">
+      <label for="personAge">Age</label>
+      <input type="text" id="personAge">
+    </div>
+    <button class="primary" id="submitBtn" onclick="checkIn()">Check in</button>
+    <p class="msg" id="msg"></p>
+  </div>
+</div>
+
+<script>
+const CONTACTS = [
+  {name:"Harrison Armstrong", license:"", address:"90 N 4850 W, West Point, UT 84015", age:"20"},
+  {name:"Cherylee Bigler", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"42"},
+  {name:"Jordan Hernandez", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"19"},
+  {name:"Kevin Hernandez", license:"", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"18"},
+  {name:"Ryan Bigler", license:"Display FE129616, Prox FE129626, Flame Eff FE129636", address:"794 W 1950 N, W. Bountiful, UT 84087", age:"44"},
+  {name:"Sofia Bigler", license:"", address:"5058 S. Daisy Ln., Murray, UT 84123", age:"19"},
+  {name:"Clara Boekweg (Ronan)", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"18"},
+  {name:"Darren Boekweg", license:"Display FE127616, Special Effects FE130416, Flame FE134616", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"44"},
+  {name:"Ian Boekweg", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"21"},
+  {name:"Noah Boekweg", license:"", address:"1815 Foothill Dr, Salt Lake City, UT 84108", age:"22"},
+  {name:"Sheena Boekweg", license:"", address:"5344 Arbutus Cir, West Jordan, UT 84081", age:"43"},
+  {name:"Nicki Carter", license:"", address:"", age:"31"},
+  {name:"Drew Christensen", license:"FE136216", address:"4217 South Deno Drive, West Valley City, UT 84120", age:"28"},
+  {name:"Mason Dahl", license:"", address:"460 N 5000 W, West Point, UT 84015", age:"20"},
+  {name:"Ethan Doney", license:"FE125816", address:"6288 S 2525 W, Taylorsville, UT 84129", age:"24"},
+  {name:"McKayla Farnsworth", license:"", address:"4112 W 4000 S, WVC, UT 84120", age:"18"},
+  {name:"Eric Farnsworth", license:"FE28540", address:"4112 W 4000 S, WVC, UT 84120", age:"47"},
+  {name:"Randa Farnsworth", license:"", address:"4112 W 4000 S, WVC, UT 84120", age:"25"},
+  {name:"Kurtis Fredericks", license:"FE113011", address:"3573 W. 1450 N., West Point, UT 84015", age:"44"},
+  {name:"Brady Gabbitas", license:"Display FE121816, Prox FE121826, Flame Eff FE123016", address:"116 N 1525 W, West Point, UT 84015", age:"40"},
+  {name:"Calli Gade", license:"", address:"542 N Willow Springs Ave, Lehi, UT 84043", age:"34"},
+  {name:"Katie Gabbitas", license:"", address:"116 N 1525 W, West Point, UT 84015", age:"37"},
+  {name:"Jenifer Hairr", license:"FE100009", address:"8775 S Deep Creek Drive, West Jordan, UT 84081", age:""},
+  {name:"McKenzie Haynes", license:"", address:"1251 W. 525 S., Lehi, UT 84043", age:"22"},
+  {name:"Taylor Harrison", license:"", address:"2360 East 2100 S, Salt Lake City, UT 84109", age:"20"},
+  {name:"Ben Jensen", license:"Display & Prox FE56511", address:"7005 W 2500 N, Mendon, UT 84325", age:"45"},
+  {name:"Charles Johnson", license:"FE3879", address:"1865 Wasatch Dr. E, Salt Lake City, UT 84108", age:"67"},
+  {name:"Brandon Lang", license:"", address:"5193 W. Armada Way, Herriman, UT 84096", age:"48"},
+  {name:"John Lawton", license:"", address:"432 Rolling Sage Way, Saratoga Springs, UT 84045", age:"42"},
+  {name:"Julio Lopez", license:"", address:"8528 W Cordero Drive, SLC, UT 84044", age:"20"},
+  {name:"Jeff McDonald", license:"", address:"1878 E 5150 S, Holladay, UT 84117", age:"43"},
+  {name:"Amanda Mechem", license:"(D) FE6771, (SE) 100211", address:"831 E 950 S, Provo, UT 84606", age:"48"},
+  {name:"Grace Melton", license:"", address:"", age:""},
+  {name:"Jason Mecham", license:"", address:"831 E 950 S, Provo, UT 84606", age:"49"},
+  {name:"Ruthanne Wilberg", license:"", address:"831 E 950 S, Provo, UT 84606", age:"18"},
+  {name:"Niel Moalla", license:"", address:"", age:""},
+  {name:"Russ Monsive", license:"", address:"7637 S 4470 W, West Jordan, UT 84084", age:"48"},
+  {name:"Mike Olsen", license:"", address:"1170 East 1000 South, Spanish Fork, UT 84660", age:"63"},
+  {name:"Cameron Orr", license:"FE98271", address:"3312 E Kennecuck Lane, Eagle Mountain, UT 84005", age:"42"},
+  {name:"Dave Pehrson", license:"", address:"4943 Kathleen Ave, Salt Lake City, UT 84120", age:"68"},
+  {name:"Dave Perkes", license:"", address:"", age:"65"},
+  {name:"Jason Pehrson", license:"FE134626", address:"7522 S 4730 W, West Jordan, UT 84084", age:"42"},
+  {name:"Stephen Pehrson", license:"", address:"4320 S Arden Court, Taylorsville, UT 84123", age:"34"},
+  {name:"Vincent Pelina", license:"", address:"590 E 1590 S, Lehi, UT 84043", age:"28"},
+  {name:"Carter Pochynok", license:"Display FE135416", address:"1302 S. Roberta St., SLC, UT 84115", age:"28"},
+  {name:"Niel Rands", license:"", address:"4365 Deermeadow Dr, West Valley City, UT 84120", age:"59"},
+  {name:"Paula Rasmussen", license:"", address:"PO Box 8624, Midvale, UT 84047", age:"58"},
+  {name:"Thai Schmoekel", license:"", address:"", age:""},
+  {name:"Daland Speirs", license:"FE112441", address:"4960 W Mandan Ave, Salt Lake City, UT 84120", age:"48"},
+  {name:"Max Starr", license:"", address:"10117 N Cottonwood Drive, Cedar Hills, UT 84062", age:"18"},
+  {name:"Clifford Wallgren", license:"Prox FE7488, Flame FE100006", address:"4022 S. Peachwood Dr, WVC, UT 84118", age:"44"},
+  {name:"Jessica Wallace", license:"", address:"7867 Millerberg Dr, Sandy, UT 84047", age:"26"},
+  {name:"JJ Wallace", license:"", address:"7867 Millerberg Dr, Sandy, UT 84047", age:"48"},
+  {name:"Garth Wiscombe", license:"", address:"7256 Nina Cir, West Jordan, UT 84084", age:"68"},
+  {name:"Rex Williams", license:"", address:"2387 East 3395 South, Millcreek, UT 84109", age:"38"},
+  {name:"Ruthie Wood", license:"", address:"968 E Cherry Lane, Layton, UT 84040", age:"21"},
+  {name:"Evan Cornell", license:"", address:"1039 W. Feather Cap, Bluffdale, UT 84065", age:"43"},
+  {name:"Tina Carrasco", license:"", address:"1158 N 200 W, Apt 2, Bountiful, UT 84010", age:"43"}
+];
+const CONTACTS_BY_NAME = {};
+CONTACTS.forEach(c => CONTACTS_BY_NAME[c.name.toLowerCase()] = c);
+
+const CHECKIN_API_URL = "https://script.google.com/macros/s/AKfycbzvRJ6jg3c6BziCOFC119CZREibInXnsqZl7XMRNasryTG8AHWGFfVeQgZco-VCJMgCKQ/exec";
+
+document.getElementById('contactsList').innerHTML =
+  CONTACTS.map(c => `<option value="${c.name}">`).join('');
+
+const params = new URLSearchParams(window.location.search);
+const eventFromUrl = params.get('event') || '';
+document.getElementById('eventName').value = eventFromUrl;
+if(eventFromUrl){
+  document.getElementById('eventTitle').textContent = eventFromUrl;
+}
+
+function autofill(nameInput){
+  const match = CONTACTS_BY_NAME[nameInput.value.trim().toLowerCase()];
+  if(match){
+    document.getElementById('personLicense').value = match.license || '';
+    document.getElementById('personAddress').value = match.address || '';
+    document.getElementById('personAge').value = match.age || '';
+  }
+}
+
+function checkIn(){
+  const eventName = document.getElementById('eventName').value.trim();
+  const name = document.getElementById('personName').value.trim();
+  const msg = document.getElementById('msg');
+
+  if(!eventName || !name){
+    msg.textContent = 'Enter the event and your name before checking in.';
+    msg.className = 'msg err';
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking in…';
+
+  const payload = {
+    event: eventName,
+    name: name,
+    license: document.getElementById('personLicense').value.trim(),
+    address: document.getElementById('personAddress').value.trim(),
+    age: document.getElementById('personAge').value.trim()
+  };
+
+  fetch(CHECKIN_API_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify(payload)
+  }).then(() => {
+    document.getElementById('formBody').innerHTML = `
+      <div class="success">
+        <div class="check">&#10003;</div>
+        <h2>You're checked in</h2>
+        <p>${name} — ${eventName}</p>
+      </div>`;
+  }).catch(() => {
+    msg.textContent = 'Could not check in — check your connection and try again.';
+    msg.className = 'msg err';
+    btn.disabled = false;
+    btn.textContent = 'Check in';
+  });
+}
+</script>
+</body>
+</html>
